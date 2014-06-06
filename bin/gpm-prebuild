@@ -24,9 +24,10 @@ LIMITATIONS
     This can only build packages with top-level source code.
 
 USAGE
-      $ gpm prebuild             # Pre-build everything in Godeps
+      $ gpm prebuild             # Pre-build everything in Godeps, alias of build
       $ gpm prebuild build       # Pre-build everything in Godeps
       $ gpm prebuild build-git   # Pre-build everything in Godeps-Git
+      $ gpm prebuild git         # Alias of build-git
       $ gpm prebuild version     # Outputs version information
       $ gpm prebuild help        # Prints this message
       $ gpm prebuild clean       # Deletes existing prebuilds only from
@@ -87,7 +88,7 @@ case "${1:-"build"}" in
       ( echo ">> Go is currently not installed or in your PATH" && exit 1)
     godeps_build $deps_file
     ;;
-  "build-git")
+  "build-git" | "git")
     deps_file="${2:-"Godeps-Git"}"
     [[ -f "$deps_file" ]] || (echo ">> $deps_file file does not exist." && exit 1)
     (which go > /dev/null) ||
