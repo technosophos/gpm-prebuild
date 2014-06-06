@@ -1,0 +1,107 @@
+#!/usr/bin/env bash
+
+set -eu
+
+## Functions/
+usage() {
+cat << EOF
+SYNOPSIS
+
+    gpm-prebuild provides library pre-building support for Go libraries
+    in your Godeps file.
+
+    As Go projects get larger and larger, it is sometimes nice to speed up
+    local compilation. One way of doing this is by prebuilding the supporting
+    libraries in the GOPATH. And that is what this program does.
+
+    Essentially, it reads the Godeps file and runs `go build` on packages
+    referenced there.
+
+    The resulting .a files are located in .godeps/pkg
+
+LIMITATIONS
+
+    This can only build packages with top-level source code.
+
+USAGE
+      $ gpm prebuild             # Pre-build everything in Godeps
+      $ gpm prebuild build       # Pre-build everything in Godeps
+      $ gpm prebuild build-git   # Pre-build everything in Godeps-Git
+      $ gpm prebuild version     # Outputs version information
+      $ gpm prebuild help        # Prints this message
+      $ gpm prebuild clean       # Deletes existing prebuilds only from
+                                 # the first path on GOPATH.
+EOF
+}
+
+usage_name() {
+cat << EOF
+
+Prebuild dependencies.
+
+USAGE
+    $ gpm prebuild
+    $ gpm prebuild help  # For a full list of commands.
+
+EOF
+}
+
+godeps_build() {
+  local deps=$(sed 's/#.*//;/^\s*$/d' < $1) || echo ""
+
+  while read package version; do
+    go_install $package
+  done < <(echo "$deps")
+  wait
+  echo ">> All Done"
+}
+
+godeps_git_build() {
+  local deps=$(sed 's/#.*//;/^\s*$/d' < $1) || echo ""
+
+  while read repo package version; do
+    go_install $package
+  done < <(echo "$deps")
+  wait
+  echo ">> All Done"
+}
+
+go_install() {
+  local package=$1
+  echo ">> Pre-building $package"
+  go install $package
+  echo ">> Pre-building $package/..."
+  go install $package/...
+}
+
+
+## Command Line Parsing
+case "${1:-"build"}" in
+  "version")
+    echo ">> gpm-prebuild v1.0.0"
+    ;;
+  "build")
+    deps_file="${2:-"Godeps"}"
+    [[ -f "$deps_file" ]] || (echo ">> $deps_file file does not exist." && exit 1)
+    (which go > /dev/null) ||
+      ( echo ">> Go is currently not installed or in your PATH" && exit 1)
+    godeps_build $deps_file
+    ;;
+  "build-git")
+    deps_file="${2:-"Godeps-Git"}"
+    [[ -f "$deps_file" ]] || (echo ">> $deps_file file does not exist." && exit 1)
+    (which go > /dev/null) ||
+      ( echo ">> Go is currently not installed or in your PATH" && exit 1)
+    godeps_git_build $deps_file
+    ;;
+  "clean")
+    rm -rf ${GOPATH%%:*}/pkg/*
+    ;;
+  "help")
+    usage
+    ;;
+  *)
+    echo "Unknown command ${1}"
+    usage && exit 1
+    ;;
+esac
