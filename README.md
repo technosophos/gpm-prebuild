@@ -4,9 +4,11 @@ For any sizeable project, Go compilation time is just soooo long.
 Sometimes a build can take upwards of 10 seconds! But you can cut that
 time down.
 
-This is a plugin for GPM that runs a `go build` on all of your
+This is a plugin for [GPM](https://github.com/pote/gpm)
+that runs a `go build` on all of your
 dependencies in the `$GOPATH`. If you are using a per-project `$GOPATH`
-(the standard way of using GVP) then prebuilding is a simple way of
+(the standard way of using [GVP](https://github.com/pote/gvp)) then
+prebuilding is a simple way of
 improving performance.
 
 ## Installing
