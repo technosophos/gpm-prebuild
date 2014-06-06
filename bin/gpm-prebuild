@@ -69,10 +69,10 @@ godeps_git_build() {
 
 go_install() {
   local package=$1
-  echo ">> Pre-building $package"
-  go install $package
   echo ">> Pre-building $package/..."
   go install $package/...
+  echo ">> Pre-building $package"
+  go install $package
 }
 
 
