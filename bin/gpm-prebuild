@@ -24,10 +24,8 @@ LIMITATIONS
     This can only build packages with top-level source code.
 
 USAGE
-      $ gpm prebuild             # Pre-build everything in Godeps, alias of build
-      $ gpm prebuild build       # Pre-build everything in Godeps
-      $ gpm prebuild build-git   # Pre-build everything in Godeps-Git
-      $ gpm prebuild git         # Alias of build-git
+      $ gpm prebuild             # Pre-build everything in Godeps and Godeps-Git, alias of build
+      $ gpm prebuild build       # Pre-build everything in Godeps and Godeps-Git
       $ gpm prebuild version     # Outputs version information
       $ gpm prebuild help        # Prints this message
       $ gpm prebuild clean       # Deletes existing prebuilds only from
@@ -53,8 +51,6 @@ godeps_build() {
   while read package version; do
     go_install $package
   done < <(echo "$deps")
-  wait
-  echo ">> All Done"
 }
 
 godeps_git_build() {
@@ -63,8 +59,6 @@ godeps_git_build() {
   while read repo package version; do
     go_install $package
   done < <(echo "$deps")
-  wait
-  echo ">> All Done"
 }
 
 go_install() {
@@ -82,18 +76,33 @@ case "${1:-"build"}" in
     echo ">> gpm-prebuild v1.0.0"
     ;;
   "build")
-    deps_file="${2:-"Godeps"}"
-    [[ -f "$deps_file" ]] || (echo ">> $deps_file file does not exist." && exit 1)
     (which go > /dev/null) ||
       ( echo ">> Go is currently not installed or in your PATH" && exit 1)
-    godeps_build $deps_file
+    if [ ! -z "${2:-}" ]; then
+      [[ -f "$2" ]] || (echo ">> $2 file does not exist." && exit 1)
+      if [ $(expr $(cat "$2" | head -n 1 | grep -o " " | wc -l)) -eq 1 ]; then
+        # Godeps
+        godeps_build "$2"
+      elif [ $(expr $(cat "$2" | head -n 1 | grep -o " " | wc -l)) -eq 2 ]; then
+        # Godeps-Git
+        godeps_git_build "$2"
+      else
+        echo ">> $2 file is not in Godeps or Godeps-Git format." && exit 1
+      fi
+    else
+      godeps_file="Godeps"
+      godeps_git_file="Godeps-Git"
+      [[ -f $godeps_file || -f $godeps_git_file ]] ||
+        (echo ">> Neither $godeps_file nor $godeps_git_file file exists." && exit 1)
+      [[ -f $godeps_file ]] && godeps_build $godeps_file
+      [[ -f $godeps_git_file ]] && godeps_git_build $godeps_git_file
+    fi
+    wait
+    echo ">> All Done"
     ;;
   "build-git" | "git")
-    deps_file="${2:-"Godeps-Git"}"
-    [[ -f "$deps_file" ]] || (echo ">> $deps_file file does not exist." && exit 1)
-    (which go > /dev/null) ||
-      ( echo ">> Go is currently not installed or in your PATH" && exit 1)
-    godeps_git_build $deps_file
+    echo ">> WARNING: Command '$1' is deprecated. The default command now reads both Godeps and Godeps-Git." >&2
+    exit 1
     ;;
   "clean")
     rm -rf ${GOPATH%%:*}/pkg/*
